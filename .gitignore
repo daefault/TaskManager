@@ -1,0 +1,326 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+test-reports/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+.env.staging
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.~lock.*
+*.sublime-*
+.DS_Store
+*.code-workspace
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+docker-compose.dev.yml
+docker-compose.local.yml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.postgresql
+*.dump
+*.sql
+*.backup
+
+# PostgreSQL local data
+postgres_data/
+pgdata/
+data/
+
+# Alembic
+alembic/versions/*.py
+!alembic/versions/__init__.py
+*.pyc
+alembic/*.pyc
+
+# Logs
+logs/
+*.log
+*.pid
+*.lock
+
+# Backups
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Node.js / Frontend (if you have JS/TS frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+dist/
+build/
+out/
+.next/
+.nuxt/
+.parcel-cache/
+
+# Frontend build artifacts
+*.css.map
+*.js.map
+*.js.map
+*.min.js
+*.min.css
+
+# Nginx
+nginx/logs/
+nginx/ssl/
+
+# Certificates
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+
+# Environment specific
+.devcontainer/
+*.local
+*.secret
+secrets/
+credentials/
+*.key
+*.pem
+*.cert
+
+# Uploads / Media
+media/
+uploads/
+staticfiles/
+static/
+mediafiles/
+
+# FastAPI specific
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Docker volumes
+docker-volumes/
+.volumes/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Kubernetes
+*.kubeconfig
+*.kubeconfig.*
+.helm/
+charts/*.tgz
+
+# MongoDB
+dump/
+mongodump/
+
+# Redis
+dump.rdb
+appendonly.aof
+
+# Elasticsearch
+elasticsearch-data/
+
+# MinIO
+minio-data/
+
+# AWS
+.aws/
+*.aws
+
+# GCP
+*.json
+*.gcp
+
+# SSH
+*.ssh
+.id_rsa*
+
+# JWT / Keys
+*.jwt
+*.keychain
+
+# Profiling
+*.prof
+*.profile
+
+# OS generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Application specific
+app.log
+access.log
+error.log
+app.db
+instance/
+
+# Backup migrations
+alembic/versions/*_backup.py
+
+# Coverage
+.coverage
+htmlcov/
+.xml-coverage
+
+# Debug
+debug.log
+debug.py
+test_debug.py
