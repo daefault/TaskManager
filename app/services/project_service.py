@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 from typing import List
-from ..repositories.project_repository import ProjectRepository
+from ..repositories import ProjectRepository, UserRepository
 from ..schemas.project import ProjectResponse, ProjectCreate, ProjectUpdate
 from fastapi import HTTPException, status
 
 class ProjectService:
-    def __init__(self, project_repository: ProjectRepository):
+    def __init__(self, project_repository: ProjectRepository, user_repository: UserRepository):
         self.repository = project_repository
+        self.user_repository = user_repository
 
     def get_all_project(self) -> List[ProjectResponse]:
         projects = self.repository.get_all()
@@ -21,7 +22,18 @@ class ProjectService:
             )
         return ProjectResponse.model_validate(project)
 
-    def project_create(self, project_data: ProjectCreate) -> ProjectResponse:
+    def create_project(self, project_data: ProjectCreate) -> ProjectResponse:
+        if not self.user_repository.exists(project_data.owner_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Пользователь с id {project_data.owner_id} не найден'
+            )
+        existing = self.repository.get_by_user_and_name(project_data.owner_id, project_data.title)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Проект с названием {project_data.name} уже существует у пользователя {project_data.owner_id}'
+            )
         project = self.repository.create(project_data)
         return ProjectResponse.model_validate(project)
 
@@ -41,12 +53,15 @@ class ProjectService:
                 detail=f'Проект с id {project_id} не найден'
             )
 
-        if project_data.name:
-            existing = self.repository.get_by_name(project_data.name)
+        if project_data.name or project_data.owner_id:
+            current_project = self.repository.get_by_id(project_id)
+            owner_id = project_data.owner_id if project_data.owner_id else current_project.owner_id
+            name = project_data.name if project_data.name else current_project.name
+            existing = self.repository.get_by_user_and_name(owner_id, name)
             if existing and existing.id != project_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f'Название {project_data.name} уже занято'
+                    detail=f'Проект с названием {name} уже существует у пользователя'
                 )
         updated_project = self.repository.update(project_id, project_data)
         return ProjectResponse.model_validate(updated_project)

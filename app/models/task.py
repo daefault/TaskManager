@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..database import Base
@@ -8,7 +8,7 @@ from .association import task_assignees
 class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), unique=True, nullable=False)
+    title = Column(String(200), nullable=False)
     description = Column(Text)
     status = Column(Enum(TaskStatus), nullable=False, default=TaskStatus.PENDING)
     priority = Column(Enum(Priority), nullable=False, default=Priority.LOW)
@@ -17,6 +17,10 @@ class Task(Base):
     creator_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), index=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('project_id', 'title', name='uq_task_title_per_project'),
+    )
 
     project = relationship('Project', back_populates='tasks')
 

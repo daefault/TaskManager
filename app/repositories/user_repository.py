@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..models.user import User
+from ..models import User
 from ..schemas.user import UserCreate
+from ..schemas.task import TaskResponse
 from .base import BaseRepository
 import bcrypt
 
@@ -28,4 +29,3 @@ class UserRepository(BaseRepository[User]):
 
     def get_by_email(self, email: str) -> Optional[User]:
         return self.db.query(User).filter(User.email == email).first()
-        

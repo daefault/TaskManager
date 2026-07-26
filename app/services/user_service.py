@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List
-from ..repositories.user_repository import UserRepository
+from ..repositories import UserRepository
 from ..schemas.user import UserResponse, UserCreate, UserUpdate, UserBriefResponse
 from fastapi import HTTPException, status
 
@@ -21,7 +21,17 @@ class UserService:
             )
         return UserResponse.model_validate(user)
 
-    def user_create(self, user_data: UserCreate) -> UserResponse:
+    def create_user(self, user_data: UserCreate) -> UserResponse:
+        if self.repository.get_by_username(user_data.username):
+            raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f'Имя {user_data.username} уже занято'
+                )
+        if self.repository.get_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Email "{user_data.email}" уже используется'
+            )
         user = self.repository.create(user_data)
         return UserResponse.model_validate(user)
 

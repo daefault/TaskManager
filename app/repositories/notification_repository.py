@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..models.notification import Notification
+from ..models import Notification
 from .base import BaseRepository
 
 

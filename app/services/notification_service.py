@@ -1,12 +1,16 @@
 from sqlalchemy.orm import Session
 from typing import List
-from ..repositories.notification_repository import NotificationRepository
+from ..repositories import NotificationRepository, UserRepository
 from ..schemas.notification import NotificationResponse, NotificationCreate, NotificationUpdate
 from fastapi import HTTPException, status
 
 class NotificationService:
-    def __init__(self, notification_repository: NotificationRepository):
+    def __init__(
+            self,
+            notification_repository: NotificationRepository,
+            user_repository: UserRepository):
         self.repository = notification_repository
+        self.user_repository = user_repository
 
     def get_all_notification(self) -> List[NotificationResponse]:
         notifications = self.repository.get_all()
@@ -21,7 +25,12 @@ class NotificationService:
             )
         return NotificationResponse.model_validate(notification)
 
-    def notification_create(self, notification_data: NotificationCreate) -> NotificationResponse:
+    def create_notification(self, notification_data: NotificationCreate) -> NotificationResponse:
+        if not self.user_repository.exists(notification_data.user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Пользователь с id {notification_data.user_id} не найден'
+            )
         notification = self.repository.create(notification_data)
         return NotificationResponse.model_validate(notification)
 
