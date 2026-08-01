@@ -1,0 +1,26 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Artyom Denisov",email = "artem_denisov_2005@inbox.ru"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi (>=0.140.1,<0.141.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "alembic (>=1.18.5,<2.0.0)",
+    "pydantic[email] (>=2.13.4,<3.0.0)",
+    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "pydantic-settings (>=2.14.2,<3.0.0)",
+    "uvicorn (>=0.51.0,<0.52.0)",
+    "bcrypt (>=5.0.0,<6.0.0)",
+    "psycopg2[binary] (>=2.9.12,<3.0.0)",
+    "asyncpg (>=0.31.0,<0.32.0)",
+    "python-jose (>=3.5.0,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
