@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
 from ..database import Base
 from sqlalchemy.orm import relationship
-from .association import task_assignees
+from .association import task_assignees, project_members
 
 class User(Base):
     __tablename__ = "users"
@@ -26,3 +26,9 @@ class User(Base):
     )
     comments = relationship('Comment', back_populates='author')
     notifications = relationship('Notification', back_populates='user', cascade='all, delete-orphan')
+    project_member = relationship(
+        'Project',
+        secondary=project_members,
+        back_populates='members',
+        lazy='selectin'
+    )

@@ -8,10 +8,10 @@ class TaskRepository(BaseRepository[Task]):
     def __init__(self, db:Session):
         super().__init__(db, Task)
 
-    def create(self, data: TaskCreate) -> Task:
+    def create(self, data: TaskCreate, creator_id: int) -> Task:
         task_data = data.model_dump(exclude={'assignee_ids'})
+        task_data['creator_id'] = creator_id
         db_task = Task(**task_data)
-
         if data.assignee_ids:
             assignees = self.db.query(User).filter(
                 User.id.in_(data.assignee_ids)
@@ -76,3 +76,23 @@ class TaskRepository(BaseRepository[Task]):
             Task.project_id == project_id,
             Task.title == title
         ).first()
+
+    def get_by_user(self, user_id: int, skip: int = 0, limit: int = 10) -> List[Task]:
+        creator_query = self.db.query(Task.id.label('id')).filter(Task.creator_id == user_id)
+        assignee_query = self.db.query(Task.id.label('id')).join(Task.assignees).filter(User.id == user_id)
+
+        union = creator_query.union(assignee_query).subquery()
+
+        return self.db.query(Task).join(union, Task.id == union.c.id).order_by(Task.created_at.desc()).offset(skip).limit(limit).all()
+
+    def update_assignees(self, task_id: int, assignee_ids: List[int]) -> Optional[Task]:
+        task = self.get_by_id(task_id)
+        if not task: 
+            return None
+
+        assignees = self.db.query(User).filter(User.id.in_(assignee_ids)).all()
+        task.assignees = assignees
+
+        self.db.commit()
+        self.db.refresh(task)
+        return task

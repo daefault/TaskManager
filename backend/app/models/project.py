@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..database import Base
 from ..enums import Status
-
+from .association import project_members
 
 
 class Project(Base):
@@ -22,3 +22,10 @@ class Project(Base):
 
     owner = relationship('User', back_populates='project')
     tasks = relationship('Task', back_populates='project', cascade='all, delete-orphan')
+
+    members = relationship(
+        'User',
+        secondary=project_members,
+        back_populates='project_member',
+        lazy='selectin'
+    )

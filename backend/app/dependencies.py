@@ -29,12 +29,19 @@ def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
 def get_user_service(user_repo: UserRepository = Depends(get_user_repository)) -> UserService:
     return UserService(user_repo)
 
+def get_notification_service(
+        notification_repo: NotificationRepository = Depends(get_notification_repository),
+        user_repo: UserRepository = Depends(get_user_repository)
+) -> NotificationService:
+    return NotificationService(notification_repo, user_repo)
+
 def get_task_service(
         task_repo: TaskRepository = Depends(get_task_repository),
         user_repo: UserRepository = Depends(get_user_repository),
-        project_repo: ProjectRepository = Depends(get_project_repository)
+        project_repo: ProjectRepository = Depends(get_project_repository),
+        notification_service: NotificationService = Depends(get_notification_service)
 ) -> TaskService:
-    return TaskService(task_repo, user_repo, project_repo)
+    return TaskService(task_repo, user_repo, project_repo, notification_service)
 
 def get_comment_service(
         comment_repo: CommentRepository = Depends(get_comment_repository),
@@ -42,12 +49,6 @@ def get_comment_service(
         task_repo: TaskRepository = Depends(get_task_repository)
         ) -> CommentService:
     return CommentService(comment_repo, user_repo, task_repo)
-
-def get_notification_service(
-        notification_repo: NotificationRepository = Depends(get_notification_repository),
-        user_repo: UserRepository = Depends(get_user_repository)
-) -> NotificationService:
-    return NotificationService(notification_repo, user_repo)
 
 def get_project_service(
         project_repo: ProjectRepository = Depends(get_project_repository),

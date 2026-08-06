@@ -6,7 +6,7 @@ from datetime import datetime
 class CommentBase(BaseModel):
     content: str = Field(..., max_length=2000, description='Текст комментария (не более 2000 символов)')
     task_id: int = Field(..., gt=0, description='id задачи')
-    author_id: int = Field(..., gt=0, description='id автора комментария')
+
 
     
 class CommentCreate(CommentBase):
@@ -19,6 +19,7 @@ class CommentUpdate(BaseModel):
 
 class CommentResponse(CommentBase):
     id: int = Field(..., description='id комментария')
+    author_id: int = Field(..., gt=0, description='id автора комментария')
     created_at: datetime = Field(..., description='Время создания')
     updated_at: datetime = Field(..., description='Время обновления')
 

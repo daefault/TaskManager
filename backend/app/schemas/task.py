@@ -11,7 +11,6 @@ class TaskBase(BaseModel):
     priority: Priority = Field(Priority.LOW, description='Приоритет задачи')
     deadline: Optional[datetime] = Field(None, description='Дедлайн задачи')
     project_id: int = Field(..., gt=0, description='id проекта')
-    creator_id: int = Field(..., gt=0, description='id создателя задачи')
     
 class TaskCreate(TaskBase):
     assignee_ids: Optional[List[int]] = Field(default=[], description='ID исполнителей')
@@ -33,7 +32,6 @@ class TaskUpdate(BaseModel):
     priority: Optional[Priority] = None
     deadline: Optional[datetime] = None
     project_id: Optional[int] = Field(None, gt=0)
-    creator_id: Optional[int] = Field(None, gt=0)
     assignee_ids: Optional[List[int]] = Field(None)
 
     @field_validator('deadline')
@@ -54,5 +52,8 @@ class TaskResponse(TaskBase):
     created_at: datetime = Field(..., description='Время создания')
     updated_at: datetime = Field(..., description='Время обновления')
     assignees: Optional[List['UserBriefResponse']] = []
-    
+    creator_id: int = Field(..., gt=0, description='id создателя задачи')
     model_config = ConfigDict(from_attributes=True)
+
+class UpdateAssigneesRequest(BaseModel):
+    assignee_ids: List[int] = Field(..., min_length=1, description='Список id пользователей ')

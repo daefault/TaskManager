@@ -29,18 +29,13 @@ class CommentService:
             )
         return CommentResponse.model_validate(comment)
 
-    def create_comment(self, comment_data: CommentCreate) -> CommentResponse:
-        if not self.user_repository.exists(comment_data.author_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f'Пользователь с id {comment_data.author_id} не найден'
-            )
+    def create_comment(self, comment_data: CommentCreate, author_id: int) -> CommentResponse:
         if not self.task_repository.exists(comment_data.task_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Задача с id {comment_data.task_id} не найдена'
             )
-        comment = self.repository.create(comment_data)
+        comment = self.repository.create(comment_data, author_id)
         return CommentResponse.model_validate(comment)
 
     def get_multiple_comment_by_id(self, comment_ids: List[int]) -> List[CommentResponse]:

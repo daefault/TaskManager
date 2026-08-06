@@ -28,15 +28,6 @@ class BaseRepository(Generic[ModelType]):
             .all()
         )
         
-    def get_all(self, skip: int = 0, limit: int = 100, filters: Optional[dict] = None) -> List[ModelType]:
-        query = self.db.query(self.model)
-        if filters:
-            for key, value in filters.items():
-                if hasattr(self.model, key):
-                    query = query.filter(getattr(self.model, key) == value)
-        query = query.offset(skip).limit(limit)
-        return query.all()
-
     def update(self, id: int, data: UpdateSchemaType) -> Optional[ModelType]:
         if not self.exists(id):
             return
