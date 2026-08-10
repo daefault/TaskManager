@@ -53,18 +53,6 @@ class CommentService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Комментарий с id {comment_id} не найден'
             )
-        if comment_data.author_id:
-            if not self.user_repository.exists(comment_data.author_id):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f'Пользователь с id {comment_data.author_id} не найден'
-                )
-        if comment_data.task_id:
-            if not self.task_repository.exists(comment_data.task_id):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f'Задача с id {comment_data.task_id} не найдена'
-                )
         updated_comment = self.repository.update(comment_id, comment_data)
         return CommentResponse.model_validate(updated_comment)
 

@@ -24,7 +24,7 @@ def get_task_by_title(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='У вас нет доступа к этой задаче')
     return service.get_by_title(title)
 
-@router.get('my', response_model=List[TaskResponse])
+@router.get('/my', response_model=List[TaskResponse])
 def get_my_tasks(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=10, le=100),

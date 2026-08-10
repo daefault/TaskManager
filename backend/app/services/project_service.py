@@ -99,64 +99,48 @@ class ProjectService:
         paginated = unique_projects[skip:skip + limit]
         return [ProjectResponse.model_validate(p) for p in paginated]
 
-
-
-    def add_members(self, project_id: int, user_ids: List[int], current_user_id: int) -> ProjectResponse:
+    def update_members(self, project_id: int, member_ids: List[int], current_user_id: int) -> ProjectResponse:
         project = self.repository.get_by_id(project_id)
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Проект не найден'
-            )
-        if project.owner_id != current_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='Только владелец проекта может добавлять участников'
-            )
-        for user_id in user_ids:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Не существует такого проекта')
+        if project.owner_id !=current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Только владелец проекта может менять участников проекта')
+        for user_id in member_ids:
             if not self.user_repository.exists(user_id):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f'Пользователя {user_id} не существует'
-                )
-        updated_project = self.repository.add_members(project_id, user_ids)
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
+        updated_project = self.repository.update_members(project_id, member_ids)
         return ProjectResponse.model_validate(updated_project)
-
-    def remove_members(self, project_id: int, user_ids: List[int], current_user_id: int) -> ProjectResponse:
-        project = self.repository.get_by_id(project_id)
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Проект не найден'
-            )
-        if project.owner_id != current_user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='Только владелец проекта может удалять участников'
-            )
-        for user_id in user_ids:
-            if not self.user_repository.exists(user_id):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f'Пользователя {user_id} не существует'
-                )
-        if project.owner_id in user_ids:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Нельзя удалить владельца проекта'
-            )
-        project_member_ids = [member.id for member in project.members]
-        for user_id in user_ids:
-            if user_id not in project_member_ids:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f'Пользователь {user_id} не участник проекта'
-                )
-        updated_project = self.repository.remove_members(project_id, user_ids)
-        return ProjectResponse.model_validate(updated_project)
-
+        
     def get_all_members_in_project(self, project_id: int) -> List[UserBriefResponse]:
         if not self.repository.exists(project_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Такой проект не найден')
         members = self.repository.get_all_members_in_project(project_id)
         return [UserBriefResponse.model_validate(m) for m in members]
+
+    def add_member(self, project_id: int, user_id: int, current_user_id: int) -> ProjectResponse:
+        project = self.repository.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Проект не найден')
+        if project.owner_id != current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Только владелец может добавлять участников в проект')
+        if not self.user_repository.exists(user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
+        if user_id in [m.id for m in project.members]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Такой пользователь уже есть в проекте')
+        updated_project = self.repository.add_member(project_id, user_id)
+        return ProjectResponse.model_validate(updated_project)
+
+    def remove_member(self, project_id: int, user_id: int, current_user_id: int) -> ProjectResponse:
+        project = self.repository.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Проект не найден')
+        if project.owner_id != current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Только владелец может удалять участников из проекта')
+        if not self.user_repository.exists(user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
+        if user_id not in [m.id for m in project.members]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Такого пользователя нет в проекте')
+        if user_id == project.owner_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Нельзя удалить владельца')
+        updated_project = self.repository.remove_member(project_id, user_id)
+        return ProjectResponse.model_validate(updated_project)

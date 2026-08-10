@@ -22,24 +22,6 @@ class TaskRepository(BaseRepository[Task]):
         self.db.commit()
         self.db.refresh(db_task)
         return db_task
-
-    def update(self, id: int, data: TaskUpdate) -> Optional[Task]:
-        if not self.exists(id):
-            return None
-
-        to_update = self.db.query(Task).filter(Task.id == id).first()
-        update_data = data.model_dump(exclude_unser=True, exclude={'assignee_ids'})
-        for key, value in update_data.items():
-            if hasattr(to_update, key):
-                setattr(to_update, key, value)
-        if data.assignee_ids is not None:
-            assignees = self.db.query(User).filter(
-                User.id.in_(data.assignee_ids)
-                ).all()
-            to_update.assignees = assignees
-        self.db.commit()
-        self.db.refresh(to_update)
-        return to_update
     
     def get_by_title(self, title: str) -> Optional[Task]:
         return self.db.query(Task).filter(Task.title == title).first()
@@ -66,6 +48,7 @@ class TaskRepository(BaseRepository[Task]):
 
         user = self.db.query(User).filter(User.id == user_id).first()
         if user and user in task.assignees:
+            task.assignees.remove(user)
             self.db.commit()
             self.db.refresh(task)
 

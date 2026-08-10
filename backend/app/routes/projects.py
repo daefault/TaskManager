@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query, status, HTTPException
 from typing import List
 from ..dependencies import get_project_service, get_current_user, require_admin
 from ..services import ProjectService
-from ..schemas.project import ProjectResponse, ProjectCreate, ProjectUpdate, AddMembersRequest, RemoveMembersRequest
+from ..schemas.project import ProjectResponse, ProjectCreate, ProjectUpdate, UpdateMembersRequest
 from ..schemas.user import UserBriefResponse
 from ..models import User
 from ..enums import Status
@@ -14,7 +14,7 @@ router = APIRouter(
     tags=['projects']
 )
 
-@router.get('/', response_model=List[ProjectResponse])
+@router.get('', response_model=List[ProjectResponse], status_code=status.HTTP_200_OK)
 def get_my_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=10, le=100),
@@ -95,25 +95,16 @@ def get_project_by_id(
             )
     return project
 
-@router.post('/{project_id}/members', response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-def add_members(
-    project_id: int,
-    request: AddMembersRequest,
+@router.put('/{project_id}/members', response_model=ProjectResponse, status_code=status.HTTP_200_OK)
+def update_members_in_project(
+    project_id: int, 
+    request: UpdateMembersRequest,
     current_user: User = Depends(get_current_user),
     service: ProjectService = Depends(get_project_service)
 ):
-    return service.add_members(project_id, request.user_ids, current_user.id)
+    return service.update_members(project_id, request.member_ids, current_user.id)
 
-@router.delete('/{project_id}/members', status_code=status.HTTP_204_NO_CONTENT)
-def remove_members(
-    project_id: int,
-    request: RemoveMembersRequest,
-    current_user: User = Depends(get_current_user),
-    service: ProjectService = Depends(get_project_service)
-):
-    service.remove_members(project_id, request.user_ids, current_user.id)
-
-@router.get('/{project_id}/members', response_model=List[UserBriefResponse])
+@router.get('/{project_id}/members', response_model=List[UserBriefResponse], status_code=status.HTTP_200_OK)
 def get_all_members_in_project(
     project_id: int, 
     current_user: User = Depends(get_current_user), 
@@ -124,3 +115,20 @@ def get_all_members_in_project(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='У вас нет доступа к этому проекту')
     return service.get_all_members_in_project(project_id)
 
+@router.post('/{project_id}/members/{user_id}', response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+def add_member(
+    project_id: int,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    service: ProjectService = Depends(get_project_service)
+):
+    return service.add_member(project_id, user_id, current_user.id)
+
+@router.delete('/{project_id}/members/{user_id}', response_model=ProjectResponse, status_code=status.HTTP_200_OK)
+def remove_member(
+    project_id: int, 
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    service: ProjectService = Depends(get_project_service)
+):
+    return service.remove_member(project_id, user_id, current_user.id)

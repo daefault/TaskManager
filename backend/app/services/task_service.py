@@ -100,21 +100,7 @@ class TaskService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f'Проект с id {task_data.project_id} не найден'
                 )
-
-        if task_data.assignee_ids:
-            for user_id in task_data.assignee_ids:
-                if not self.user_repository.exists(user_id):
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f'Пользователь с id {user_id} не найден'
-                    )
         updated_task = self.repository.update(task_id, task_data)
-        if task_data.assignee_ids:
-                for user_id in task_data.assignee_ids:
-                    self.notification_service.notify_task_assigned(
-                        user_id=user_id,
-                        task_title=updated_task.title
-                    )
         return TaskResponse.model_validate(updated_task)
 
     def delete_task(self, task_id: int) -> None:
@@ -203,6 +189,11 @@ class TaskService:
                     detail=f'Пользователь {user_id} не участник проекта'
             )
         task = self.repository.update_assignees(task_id, assignee_ids)
+        for user_id in assignee_ids:
+            self.notification_service.notify_task_assigned(
+                    user_id=user_id,
+                    task_title=task.title
+            )
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Задача не найдена')
         return TaskResponse.model_validate(task)

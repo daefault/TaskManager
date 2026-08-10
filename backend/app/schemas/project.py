@@ -28,8 +28,5 @@ class ProjectResponse(ProjectBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-class AddMembersRequest(BaseModel):
-    user_ids: List[int] = Field(..., min_length=1, description='Список id пользователей для добавления в проект')
-
-class RemoveMembersRequest(BaseModel):
-    user_ids: List[int] = Field(..., min_length=1, description='Список id пользователей для удаления из проекта')
+class UpdateMembersRequest(BaseModel):
+    member_ids: List[int] = Field(..., descritption='Список id членов проекта')

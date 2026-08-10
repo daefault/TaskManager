@@ -14,9 +14,8 @@ class CommentCreate(CommentBase):
 
 class CommentUpdate(BaseModel):
     content: Optional[str] = Field(None, max_length=2000)
-    task_id: Optional[int] = Field(None, gt=0)
-    author_id: Optional[int] = Field(None, gt=0)
 
+    
 class CommentResponse(CommentBase):
     id: int = Field(..., description='id комментария')
     author_id: int = Field(..., gt=0, description='id автора комментария')

@@ -32,30 +32,15 @@ class ProjectRepository(BaseRepository[Project]):
     def get_by_member(self, member_id: int) -> List[Project]:
         return self.db.query(Project).join(Project.members).filter(User.id == member_id).all()
 
-    def add_members(self, project_id: int, user_ids: List[int]) -> Optional[Project]:
+    def update_members(self, project_id: int, members_ids: List[int]) -> Optional[Project]:
         project = self.get_by_id(project_id)
         if not project:
-            return
+            return None
+        if project.owner_id not in members_ids:
+            members_ids.append(project.owner_id)
+        new_members = self.db.query(User).filter(User.id.in_(members_ids)).all()
 
-        members = self.db.query(User).filter(User.id.in_(user_ids)).all()
-        for user in members:
-            if user not in project.members:
-                project.members.append(user)
-
-        self.db.commit()
-        self.db.refresh(project)
-        return project
-
-    def remove_members(self, project_id: int, user_ids: List[int]) -> Optional[Project]:
-        project = self.get_by_id(project_id)
-        if not project:
-            return
-
-        members_to_remove = self.db.query(User).filter(User.id.in_(user_ids)).all()
-        for user in members_to_remove:
-            if user in project.members:
-                project.members.remove(user)
-
+        project.members = new_members
         self.db.commit()
         self.db.refresh(project)
         return project
@@ -71,3 +56,31 @@ class ProjectRepository(BaseRepository[Project]):
         if not project:
             return []
         return project.members
+
+    def add_member(self, project_id: int, user_id: int) -> Optional[Project]:
+        project = self.get_by_id(project_id)
+        if not project:
+            return None
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        if user not in project.members:
+            project.members.append(user)
+            self.db.commit()
+            self.db.refresh(project)
+
+        return project
+
+    def remove_member(self, project_id: int, user_id: int) -> Optional[Project]:
+        project = self.get_by_id(project_id)
+        if not project:
+            return None
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        if user in project.members:
+            project.members.remove(user)
+            self.db.commit()
+            self.db.refresh(project)
+
+        return project

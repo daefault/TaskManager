@@ -40,14 +40,6 @@ def get_unread_count(
 ):
     return service.get_unread_count(current_user.id)
 
-@router.get('/{notification_id}', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
-def get_notification_by_id(
-    notification_id: int, 
-    service: NotificationService = Depends(get_notification_service),
-    admin: User = Depends(require_admin)
-):
-    return service.get_notification_by_id(notification_id)
-
 @router.post('', response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
 def create_notification(
     notification_data: NotificationCreate, 
@@ -65,6 +57,14 @@ def get_my_notifications(
     service: NotificationService = Depends(get_notification_service)
 ):
     return service.get_user_notifications(current_user.id, skip, limit, is_read)
+
+@router.get('/{notification_id}', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
+def get_notification_by_id(
+    notification_id: int, 
+    service: NotificationService = Depends(get_notification_service),
+    admin: User = Depends(require_admin)
+):
+    return service.get_notification_by_id(notification_id)
 
 @router.put('/{notification_id}', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
 def update_notification(
@@ -86,7 +86,7 @@ def delete_notification(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Это уведомление не принадлежит вам')
     service.delete_notification(notification_id)
 
-@router.put('/{notification_id}/read', response_model=NotificationResponse)
+@router.put('/{notification_id}/read', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
 def mark_as_read(
     notification_id: int, 
     current_user: User = Depends(get_current_user), 
