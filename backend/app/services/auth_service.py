@@ -25,7 +25,7 @@ class AuthService:
             password=hashed_password
         )
         user = self.user_service.create_user(user_create_data)
-
+        self.user_repository.update_user_activity(user.id)
         return self._create_tokens_for_user(user)
 
     def login_user(self, login_data: UserLogin) -> TokenResponse:
@@ -35,6 +35,12 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Неверное имя пользователя или пароль',
                 headers={'WWW-Authenticate': 'Bearer'})
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code = status.HTTP_403_FORBIDDEN,
+                detail='Учётная запись отключена'
+            ) 
         
         if not verify_password(login_data.password, user.password):
             raise HTTPException(
@@ -42,6 +48,7 @@ class AuthService:
                 detail='Неверное имя пользователя или пароль',
                 headers={'WWW-Authenticate': 'Bearer'}
             )
+        self.user_repository.update_user_activity(user.id)
         return self._create_tokens_for_user(user)
 
     def refresh_access_token(self, refresh_data: TokenRefresh) -> TokenResponse:

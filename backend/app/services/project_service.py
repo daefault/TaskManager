@@ -1,18 +1,19 @@
 from sqlalchemy.orm import Session
 from typing import List
-from ..repositories import ProjectRepository, UserRepository
+from ..repositories import ProjectRepository, UserRepository, TaskRepository
 from ..schemas.project import ProjectResponse, ProjectCreate, ProjectUpdate
 from ..schemas.user import UserResponse, UserBriefResponse
 from fastapi import HTTPException, status
 from ..enums import Status
 from typing import Optional
-
+from ..config import settings
 
 
 class ProjectService:
-    def __init__(self, project_repository: ProjectRepository, user_repository: UserRepository):
+    def __init__(self, project_repository: ProjectRepository, user_repository: UserRepository, task_repository: TaskRepository):
         self.repository = project_repository
         self.user_repository = user_repository
+        self.task_repository = task_repository
 
     def get_all_project(self) -> List[ProjectResponse]:
         projects = self.repository.get_all()
@@ -49,6 +50,9 @@ class ProjectService:
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail=f'Пользователь с id {user_id} не найден'
                     )
+        project_count = self.repository.count_by_owner(owner_id)
+        if project_count >= settings.MAX_PROJECTS_PER_USER:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Достигнуто максимальное число проектов')
         project = self.repository.create(project_data, owner_id)
         return ProjectResponse.model_validate(project)
 
@@ -90,14 +94,15 @@ class ProjectService:
             )
         return ProjectResponse.model_validate(project)
 
-    def get_projects_for_user(self, user_id: int, skip: int = 0, limit: int = 10, status: Optional[Status] = None) -> List[ProjectResponse]:
-        projects = self.repository.get_by_owner(user_id) + self.repository.get_by_member(user_id)
-        unique_projects = list({p.id: p for p in projects}.values())
-        unique_projects.sort(key=lambda p: p.created_at, reverse=True)
-        if status is not None:
-            unique_projects = [p for p in unique_projects if p.status == status]
-        paginated = unique_projects[skip:skip + limit]
-        return [ProjectResponse.model_validate(p) for p in paginated]
+    def get_projects_for_user(self, user_id: int, skip: int = 0, limit: int = 10, status: Optional[Status] = None, q: Optional[str] = None) -> dict:
+        projects = self.repository.get_my_projects_paginated(user_id, skip, limit, status, q)
+        count_projects = self.repository.count_my_projects(user_id, status, q)
+        return {
+            'items': [ProjectResponse.model_validate(p) for p in projects],
+            'total': count_projects,
+            'skip': skip,
+            'limit': limit
+        }
 
     def update_members(self, project_id: int, member_ids: List[int], current_user_id: int) -> ProjectResponse:
         project = self.repository.get_by_id(project_id)
@@ -125,7 +130,7 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Только владелец может добавлять участников в проект')
         if not self.user_repository.exists(user_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
-        if user_id in [m.id for m in project.members]:
+        if any(m.id == user_id for m in project.members):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Такой пользователь уже есть в проекте')
         updated_project = self.repository.add_member(project_id, user_id)
         return ProjectResponse.model_validate(updated_project)
@@ -138,9 +143,24 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Только владелец может удалять участников из проекта')
         if not self.user_repository.exists(user_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
-        if user_id not in [m.id for m in project.members]:
+        if not any(m.id == user_id for m in project.members):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Такого пользователя нет в проекте')
         if user_id == project.owner_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Нельзя удалить владельца')
         updated_project = self.repository.remove_member(project_id, user_id)
+        self.task_repository.remove_assignee_from_all_tasks(project_id, user_id)
         return ProjectResponse.model_validate(updated_project)
+
+    def leave_project(self, project_id: int, current_user_id: int) -> ProjectResponse:
+        project = self.repository.get_by_id(project_id)
+        if not project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Проект не найден')
+        if not any(m.id == current_user_id for m in project.members):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не является участником проекта')
+        if current_user_id == project.owner_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Нельзя выйти из проекта, если ты владелец')
+        updated_project = self.repository.remove_member(project_id, current_user_id)
+        self.task_repository.remove_assignee_from_all_tasks(project_id, current_user_id)
+        return ProjectResponse.model_validate(updated_project)
+
+    

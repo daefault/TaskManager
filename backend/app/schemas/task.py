@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from .user import UserBriefResponse
 
 class TaskBase(BaseModel):
-    title: str = Field(..., min_length=5, max_length=200, description='Название задачи')
-    description: Optional[str] = Field(None, max_length=2000, descripton='Описание задачи (не более 2000 символов)')
+    title: str = Field(..., min_length=2, max_length=40, description='Название задачи')
+    description: Optional[str] = Field(None, max_length=2000, description='Описание задачи (не более 2000 символов)')
     status: TaskStatus = Field(TaskStatus.PENDING, description='Статус задачи')
     priority: Priority = Field(Priority.LOW, description='Приоритет задачи')
     deadline: Optional[datetime] = Field(None, description='Дедлайн задачи')
@@ -26,7 +26,7 @@ class TaskCreate(TaskBase):
         return v
     
 class TaskUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=5, max_length=200)
+    title: Optional[str] = Field(None, min_length=2, max_length=40)
     description: Optional[str] = Field(None, max_length=2000)
     status: Optional[TaskStatus] = None
     priority: Optional[Priority] = None
@@ -52,6 +52,7 @@ class TaskResponse(TaskBase):
     updated_at: datetime = Field(..., description='Время обновления')
     assignees: Optional[List['UserBriefResponse']] = []
     creator_id: int = Field(..., gt=0, description='id создателя задачи')
+    creator: Optional['UserBriefResponse'] = None
     model_config = ConfigDict(from_attributes=True)
 
 class UpdateAssigneesRequest(BaseModel):

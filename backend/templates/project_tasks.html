@@ -1,0 +1,155 @@
+<!-- templates/project_tasks.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Задачи проекта - TaskFlow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Контейнер для тостов -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">TaskFlow</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">Сообщение</div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/projects">TaskFlow</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text text-light me-3" id="userName">Пользователь</span>
+                <button class="btn btn-outline-light me-2" onclick="history.back()">← Назад</button>
+                <button class="btn btn-outline-light" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 id="projectTitle">Задачи</h1>
+            <button class="btn btn-primary" id="createTaskBtn">+ Новая задача</button>
+        </div>
+
+        <!-- Поиск и фильтры -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchTasksInput" placeholder="Поиск по названию...">
+                    <button class="btn btn-primary" id="searchTasksBtn">🔍</button>
+                    <button class="btn btn-outline-secondary" id="clearSearchTasksBtn" style="display: none;">✕</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterStatus">
+                    <option value="">Все статусы</option>
+                    <option value="active">Все, кроме выполненных</option>
+                    <option value="pending">Ожидает</option>
+                    <option value="in_progress">В работе</option>
+                    <option value="done">Выполнено</option>
+                    <option value="cancelled">Отменено</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterPriority">
+                    <option value="">Все приоритеты</option>
+                    <option value="low">Низкий</option>
+                    <option value="medium">Средний</option>
+                    <option value="high">Высокий</option>
+                    <option value="critical">Критический</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" id="resetFiltersBtn">Сбросить</button>
+            </div>
+        </div>
+
+        <div id="tasksList" class="row">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Пагинация -->
+        <div id="paginationContainer" class="d-flex justify-content-center mt-4"></div>
+    </div>
+
+    <!-- Модалка создания задачи -->
+    <div class="modal fade" id="createTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Новая задача</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createTaskForm">
+                        <div class="mb-3">
+                            <label for="taskTitle" class="form-label">Название</label>
+                            <input type="text" class="form-control" id="taskTitle" required>
+                            <div class="invalid-feedback" id="taskTitleError"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDescription" class="form-label">Описание</label>
+                            <textarea class="form-control" id="taskDescription" rows="3"></textarea>
+                            <div class="invalid-feedback" id="taskDescriptionError"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskPriority" class="form-label">Приоритет</label>
+                            <select class="form-select" id="taskPriority">
+                                <option value="low">Низкий</option>
+                                <option value="medium" selected>Средний</option>
+                                <option value="high">Высокий</option>
+                                <option value="critical">Критический</option>
+                            </select>
+                            <div class="invalid-feedback" id="taskPriorityError"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="taskDeadline" class="form-label">Дедлайн</label>
+                            <input type="datetime-local" class="form-control" id="taskDeadline">
+                            <div class="invalid-feedback" id="taskDeadlineError"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Исполнители</label>
+                            <div id="assigneesCheckboxes" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                <p class="text-muted">Загрузка участников...</p>
+                            </div>
+                            <div class="invalid-feedback" id="assigneesError"></div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Создать задачу</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmLogoutModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение выхода</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите выйти из учётной записи?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmLogoutBtn">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/project_tasks.js"></script>
+    <script src="/static/js/utils.js"></script>
+</body>
+</html>

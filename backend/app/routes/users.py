@@ -32,6 +32,14 @@ def get_by_username(
                )
     return user
 
+@router.get('/search', response_model=List[UserResponse], status_code=status.HTTP_200_OK)
+def search_users(
+    query: str = Query(..., min_length=1, max_length=100, description='Поисковый запрос'),
+    service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user)
+):
+    return service.search_users(query)
+
 @router.get('/by-email/', response_model=UserResponse, status_code=status.HTTP_200_OK)
 def get_by_email(
     email: str = Query(..., max_length=100, description='Email пользователя'), 
@@ -64,4 +72,7 @@ def update_user(user_id: int, user_data: UserUpdate, service: UserService = Depe
 def delete_user(user_id: int, service: UserService = Depends(get_user_service), admin: User = Depends(require_admin)):
     service.delete_user(user_id)
 
+@router.patch('/{user_id}', status_code=status.HTTP_200_OK)
+def restore_user(user_id: int, service: UserService = Depends(get_user_service), admin: User = Depends(require_admin)):
+    return service.restore_user(user_id)
      

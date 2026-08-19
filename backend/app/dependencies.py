@@ -52,9 +52,10 @@ def get_comment_service(
 
 def get_project_service(
         project_repo: ProjectRepository = Depends(get_project_repository),
-        user_repo: UserRepository = Depends(get_user_repository)
+        user_repo: UserRepository = Depends(get_user_repository),
+        task_repo: TaskRepository = Depends(get_task_repository)
 ) -> ProjectService:
-    return ProjectService(project_repo, user_repo)
+    return ProjectService(project_repo, user_repo, task_repo)
 
 def get_auth_service(    
         user_repo: UserRepository = Depends(get_user_repository),
@@ -108,6 +109,7 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail='Учётная запись отключена'
         )
+    user_repo.update_user_activity(user_id)
     return user
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:

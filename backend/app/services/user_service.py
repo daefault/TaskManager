@@ -69,9 +69,8 @@ class UserService:
         return UserResponse.model_validate(updated_user)
 
     def delete_user(self, user_id: int) -> None:
-        if self.repository.delete(user_id):
-            return
-        else:
+        user = self.repository.soft_delete(user_id)
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Пользователь с id {user_id} не найден'
@@ -94,3 +93,16 @@ class UserService:
                 detail=f'Пользователь с email {email} не найден'
             )
         return UserResponse.model_validate(user)
+
+    def restore_user(self, user_id: int) -> UserResponse:
+        user = self.repository.restore_user(user_id)
+        if not user: 
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail='Пользователь не найден'
+            )
+        return UserResponse.model_validate(user)
+
+    def search_users(self, query: str, limit: int = 10) -> List[UserResponse]:
+        users = self.repository.search_users(query, limit)
+        return [UserResponse.model_validate(user) for user in users]

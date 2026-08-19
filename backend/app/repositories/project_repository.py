@@ -3,9 +3,11 @@ from typing import List, Optional
 from ..models import Project, User
 from .base import BaseRepository
 from ..schemas.project import ProjectCreate, ProjectUpdate
+from ..enums import Status
+
 
 class ProjectRepository(BaseRepository[Project]):
-    def __init__(self, db:Session):
+    def __init__(self, db: Session):
         super().__init__(db, Project)
 
     def create(self, data: ProjectCreate, owner_id: int) -> Project:
@@ -26,11 +28,8 @@ class ProjectRepository(BaseRepository[Project]):
         self.db.refresh(db_project)
         return db_project
 
-    def get_by_owner(self, owner_id: int) -> List[Project]:
-        return self.db.query(Project).filter(Project.owner_id == owner_id).all()
-
-    def get_by_member(self, member_id: int) -> List[Project]:
-        return self.db.query(Project).join(Project.members).filter(User.id == member_id).all()
+    def count_by_owner(self, owner_id: int) -> int:
+        return self.db.query(Project).filter(Project.owner_id == owner_id).count()
 
     def update_members(self, project_id: int, members_ids: List[int]) -> Optional[Project]:
         project = self.get_by_id(project_id)
@@ -84,3 +83,36 @@ class ProjectRepository(BaseRepository[Project]):
             self.db.refresh(project)
 
         return project
+
+    def count_my_projects(self, user_id: int, status: Optional[Status] = None, q: Optional[str] = None) -> int:
+        owner_ids = self.db.query(Project.id.label('id')).filter(Project.owner_id == user_id)
+        member_ids = self.db.query(Project.id.label('id')).join(Project.members).filter(User.id == user_id)
+        union = owner_ids.union(member_ids).subquery()
+        query = self.db.query(Project).join(union, Project.id == union.c.id)
+        if status is not None:
+            query = query.filter(Project.status == status)
+        if q is not None and q.strip():
+            query = query.filter( 
+            Project.name.ilike(f'%{q}%')
+        )
+        return query.count()
+
+    def get_my_projects_paginated(
+            self,
+            user_id: int,
+            skip: int = 0,
+            limit: int = 10,
+            status: Optional[Status] = None,
+            q: Optional[str] = None
+    ) -> List[Project]:
+        owner_subquery = self.db.query(Project.id.label('id')).filter(Project.owner_id == user_id)
+        member_subquery = self.db.query(Project.id.label('id')).join(Project.members).filter(User.id == user_id)
+        union = owner_subquery.union(member_subquery).subquery()
+        query = self.db.query(Project).join(union, Project.id == union.c.id)
+        if status is not None:
+            query = query.filter(Project.status == status)
+        if q is not None and q.strip():
+            query = query.filter( 
+            Project.name.ilike(f'%{q}%')
+        )
+        return query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()

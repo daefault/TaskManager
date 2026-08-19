@@ -1,0 +1,288 @@
+<!-- templates/task_detail.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Задача - TaskFlow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Контейнер для тостов -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">TaskFlow</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">Сообщение</div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/projects">TaskFlow</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text text-light me-3" id="userName">Пользователь</span>
+                <button class="btn btn-outline-light me-2" onclick="history.back()">← Назад</button>
+                <button class="btn btn-outline-light" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Загрузка -->
+        <div id="loadingIndicator" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Детали задачи -->
+        <div id="taskDetail" class="d-none">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div style="max-width: 60%;">
+                    <h1 id="taskTitle" class="editable-field" contenteditable="false" 
+                        style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">
+                        Загрузка...
+                    </h1>
+                    
+                    <div class="description-wrapper d-flex justify-content-between align-items-start w-100">
+                        <p id="taskDescription" class="text-muted description-text flex-grow-1 mb-0" 
+                           contenteditable="false"
+                           style="word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word; max-width: 100%;">
+                            Загрузка...
+                        </p>
+                        <button class="btn btn-sm btn-link flex-shrink-0 ms-2 d-none" id="toggleTaskDescriptionBtn" 
+                                style="padding-top: 2px;">
+                            Развернуть
+                        </button>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <span class="badge" id="taskStatus"></span>
+                        <span class="badge bg-info" id="taskPriority"></span>
+                        <span class="badge bg-warning" id="taskDeadline"></span>
+                        <span class="badge bg-secondary" id="taskCreator">Создатель: загрузка...</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" id="changeTaskStatusBtn">🔄 Статус</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="changeTaskPriorityBtn">🔽 Приоритет</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="changeTaskDeadlineBtn">📅 Дедлайн</button>
+                    <button class="btn btn-danger btn-sm" id="deleteTaskBtn">🗑️ Удалить</button>
+                </div>
+            </div>
+
+            <!-- Исполнители -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Исполнители</h5>
+                    <button class="btn btn-primary btn-sm" id="addAssigneeBtn">+ Добавить</button>
+                </div>
+                <div class="card-body">
+                    <div id="assigneesList" class="mb-3">
+                        <p class="text-muted">Загрузка исполнителей...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Комментарии -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Комментарии</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Список комментариев -->
+                    <div id="commentsList" class="mb-3">
+                        <p class="text-muted">Загрузка комментариев...</p>
+                    </div>
+                    
+                    <!-- Кнопка "Загрузить еще" -->
+                    <div id="commentsPagination" class="text-center d-none">
+                        <button class="btn btn-outline-primary btn-sm" id="loadMoreCommentsBtn">Загрузить еще</button>
+                    </div>
+                    
+                    <!-- Форма добавления комментария -->
+                    <form id="addCommentForm" class="mt-3">
+                        <div class="input-group">
+                            <textarea class="form-control" id="commentContent" rows="2" placeholder="Написать комментарий..." required></textarea>
+                            <button class="btn btn-primary" type="submit">Отправить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены статуса -->
+    <div class="modal fade" id="changeTaskStatusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить статус задачи</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeTaskStatusForm">
+                        <div class="mb-3">
+                            <label for="newTaskStatus" class="form-label">Новый статус</label>
+                            <select class="form-control" id="newTaskStatus">
+                                <option value="pending">Ожидает</option>
+                                <option value="in_progress">В работе</option>
+                                <option value="done">Выполнено</option>
+                                <option value="cancelled">Отменено</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Изменить статус</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены приоритета -->
+    <div class="modal fade" id="changeTaskPriorityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить приоритет</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeTaskPriorityForm">
+                        <div class="mb-3">
+                            <label for="newTaskPriority" class="form-label">Новый приоритет</label>
+                            <select class="form-control" id="newTaskPriority">
+                                <option value="low">Низкий</option>
+                                <option value="medium">Средний</option>
+                                <option value="high">Высокий</option>
+                                <option value="critical">Критический</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Изменить приоритет</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены дедлайна -->
+    <div class="modal fade" id="changeTaskDeadlineModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить дедлайн</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeTaskDeadlineForm">
+                        <div class="mb-3">
+                            <label for="newTaskDeadline" class="form-label">Новый дедлайн</label>
+                            <input type="datetime-local" class="form-control" id="newTaskDeadline">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Изменить дедлайн</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка добавления исполнителя -->
+    <div class="modal fade" id="addAssigneeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить исполнителя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control" id="searchAssigneeInput" placeholder="Введите имя пользователя...">
+                    <div id="searchResultsList" class="mt-3">
+                        <p class="text-muted">Введите минимум 2 символа для поиска...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения удаления исполнителя -->
+    <div class="modal fade" id="confirmRemoveAssigneeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить исполнителя <strong id="removeAssigneeName"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmRemoveAssigneeBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения удаления задачи -->
+    <div class="modal fade" id="confirmDeleteTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить задачу <strong id="deleteTaskName"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteTaskBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения выхода -->
+    <div class="modal fade" id="confirmLogoutModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение выхода</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите выйти из учётной записи?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmLogoutBtn">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmDeleteCommentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить этот комментарий?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteCommentBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/task_detail.js"></script>
+</body>
+</html>

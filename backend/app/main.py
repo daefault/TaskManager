@@ -1,36 +1,47 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from .config import settings
+from fastapi.templating import Jinja2Templates
 from .routes import project_router, user_router, comment_router, notification_router, task_router, auth_router
 
 app = FastAPI(
     title=settings.app_name
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins = settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*']
-)
+app.mount('/static', StaticFiles(directory='static'), name='static')
+templates = Jinja2Templates(directory="templates")
 
-app.mount('/static', StaticFiles(directory=settings.static_dir), name='static')
-
-app.include_router(auth_router)
-app.include_router(project_router)
-app.include_router(user_router)
-app.include_router(comment_router)
-app.include_router(notification_router)
-app.include_router(task_router)
+app.include_router(auth_router, prefix='/api')
+app.include_router(project_router, prefix='/api')
+app.include_router(user_router, prefix='/api')
+app.include_router(comment_router, prefix='/api')
+app.include_router(notification_router, prefix='/api')
+app.include_router(task_router, prefix='/api')
 
 
 @app.get('/')
-def root():
-    return {
-        'message': 'Работает'
-    }
+def home(request: Request):
+    return templates.TemplateResponse(request=request, name="base.html")
+
+@app.get('/projects')
+def projects_page(request: Request):
+    return templates.TemplateResponse(request=request, name="projects.html")
+
+@app.get('/projects/{project_id}')
+def project_detail_page(request: Request):
+    return templates.TemplateResponse(request=request, name='project_detail.html')
+
+@app.get('/projects/{project_id}/tasks')
+def project_tasks_page(request: Request):
+    return templates.TemplateResponse(request=request, name='project_tasks.html')
+
+@app.get('/register')
+def register_page(request: Request):
+    return templates.TemplateResponse(request=request, name='register.html')
+
+@app.get('/tasks/{task_id}')
+def task_detail_page(request: Request):
+    return templates.TemplateResponse(request=request, name='task_detail.html')
 
 @app.get('/health')
 def health_check():

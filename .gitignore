@@ -240,8 +240,6 @@ credentials/
 # Uploads / Media
 media/
 uploads/
-staticfiles/
-static/
 mediafiles/
 
 # FastAPI specific
@@ -253,7 +251,6 @@ mediafiles/
 # Docker volumes
 docker-volumes/
 .volumes/
-
 # Terraform
 *.tfstate
 *.tfstate.*

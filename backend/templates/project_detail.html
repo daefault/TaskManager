@@ -1,0 +1,209 @@
+<!-- templates/project_detail.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проект - TaskFlow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Контейнер для тостов -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">TaskFlow</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">Сообщение</div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/projects">TaskFlow</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text text-light me-3" id="userName">Пользователь</span>
+                <button class="btn btn-outline-light me-2" onclick="history.back()">← Назад</button>
+                <button class="btn btn-outline-light" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Загрузка -->
+        <div id="loadingIndicator" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Детали проекта -->
+        <div id="projectDetail" class="d-none">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div style="max-width: 70%;">
+                    <h1 id="projectName" class="editable-field" contenteditable="false" 
+                        style="word-wrap: break-word; overflow-wrap: break-word;">Загрузка...</h1>
+                    <!-- Описание с переносом строк -->
+                <div class="description-wrapper d-flex justify-content-between align-items-start w-100">
+                    <p id="projectDescription" class="text-muted description-text flex-grow-1 mb-0" 
+                    contenteditable="false"
+                    style="word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word;">
+                        Загрузка...
+                    </p>
+                    <button class="btn btn-sm btn-link flex-shrink-0 ms-2 d-none" id="toggleDescriptionBtn" 
+                            style="padding-top: 2px;">
+                        Развернуть
+                    </button>
+                </div> 
+                    <span class="badge" id="projectStatus"></span>
+                </div>
+                <div>
+                    <a href="/projects/{{ project_id }}/tasks" class="btn btn-info me-2" id="tasksLink">
+                        📋 Задачи
+                    </a>
+                    <button class="btn btn-outline-secondary me-2" id="changeStatusBtn">🔄 Статус</button>
+                    <button class="btn btn-danger" id="deleteProjectBtn">🗑️ Удалить</button>
+                    <button class="btn btn-outline-danger" id="leaveProjectBtn" style="display: none;">
+                        🚪 Покинуть проект
+                    </button>
+                </div>
+            </div>
+
+            <!-- Участники -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Участники</h5>
+                </div>
+                <div class="card-body">
+                    <div id="membersList" class="mb-3">
+                        <p class="text-muted">Загрузка участников...</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="addMemberBtn">+ Добавить участника</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка смены статуса -->
+    <div class="modal fade" id="changeStatusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить статус проекта</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeStatusForm">
+                        <div class="mb-3">
+                            <label for="newProjectStatus" class="form-label">Новый статус</label>
+                            <select class="form-control" id="newProjectStatus">
+                                <option value="active">Активный</option>
+                                <option value="archived">Архивный</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Изменить статус</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка добавления участника -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить участника</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control" id="searchUserInput" placeholder="Введите имя или email...">
+                    <div id="searchResults" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения удаления участника -->
+    <div class="modal fade" id="confirmRemoveMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить участника <strong id="removeMemberName"></strong> из проекта?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmRemoveMemberBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения удаления проекта -->
+    <div class="modal fade" id="confirmDeleteProjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите удалить проект <strong id="deleteProjectName"></strong>?</p>
+                    <p class="text-danger">Это действие удалит все задачи и комментарии проекта.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteProjectBtn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка подтверждения выхода из проекта -->
+    <div class="modal fade" id="confirmLeaveProjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение выхода</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите покинуть проект <strong id="leaveProjectName"></strong>?</p>
+                    <p class="text-warning">Вы будете удалены из участников проекта и из исполнителей всех задач.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmLeaveProjectBtn">Покинуть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmLogoutModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение выхода</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите выйти из учётной записи?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmLogoutBtn">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/project_detail.js"></script>
+    <script src="/static/js/utils.js"></script>
+</body>
+</html>

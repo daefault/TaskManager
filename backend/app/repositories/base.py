@@ -41,6 +41,8 @@ class BaseRepository(Generic[ModelType]):
 
         return to_update
 
+    def get_all(self) -> List[ModelType]:
+        return self.db.query(self.model).all()
 
     def delete(self, id: int) -> bool:
         to_delete = self.db.query(self.model).filter(self.model.id == id).first()

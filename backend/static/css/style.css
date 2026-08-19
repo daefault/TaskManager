@@ -1,0 +1,97 @@
+/* static/css/style.css */
+
+/* Общие стили */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Карточки проектов */
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-title {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* ===== ОПИСАНИЕ ПРОЕКТА (перенос строк) ===== */
+.description-wrapper {
+    max-width: 100%;
+    width: 100%;
+    gap: 8px;
+}
+
+.description-text {
+    max-width: 100%;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    line-height: 1.6;
+    padding: 2px 0;
+}
+
+#toggleDescriptionBtn {
+    display: inline-block;
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    color: #0d6efd;
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+#toggleDescriptionBtn:hover {
+    text-decoration: underline;
+    color: #0a58ca;
+}
+
+/* ===== INLINE EDITING ===== */
+.editable-field {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.editable-field:hover {
+    background-color: #f0f0f0;
+}
+
+.editable-field:focus {
+    outline: 2px solid #0d6efd;
+    background-color: #fff;
+    cursor: text;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+#toggleTaskDescriptionBtn {
+    display: inline-block;
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    color: #0d6efd;
+    text-decoration: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+#toggleTaskDescriptionBtn:hover {
+    text-decoration: underline;
+    color: #0a58ca;
+}

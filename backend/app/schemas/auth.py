@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import Optional
 
 class UserRegister(BaseModel):
@@ -32,5 +32,4 @@ class UserOut(BaseModel):
     is_active: bool = True
     is_admin: bool = False
 
-    class Config: 
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

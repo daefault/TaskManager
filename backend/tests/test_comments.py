@@ -13,8 +13,8 @@ def create_comment(client):
         'email': 'test2@example.com',
         'password': 'securepassword123'
     }
-    client.post('/auth/register', json=user_data_1)
-    response = client.post('/auth/register', json=user_data_2)
+    client.post('/api/auth/register', json=user_data_1)
+    response = client.post('/api/auth/register', json=user_data_2)
     data = response.json()
     access_token = data['access_token']
     project_data = {
@@ -24,7 +24,7 @@ def create_comment(client):
             'member_ids': [1]
         }
     headers = {'Authorization': f'Bearer {access_token}'}
-    client.post('/projects', json=project_data, headers=headers)
+    client.post('/api/projects', json=project_data, headers=headers)
     task_data = {
         'title': 'TAKOETONAZVANIE',
         'description': 'VOT TAK VOT',
@@ -34,12 +34,12 @@ def create_comment(client):
         'project_id': 1,
         'assignee_ids': []
     }
-    client.post('/tasks', json=task_data, headers=headers)
+    client.post('/api/tasks', json=task_data, headers=headers)
     comment_data = {
         'content': 'GGGGGGG',
         'task_id': 1
     }
-    response = client.post('/comments', json=comment_data, headers=headers)
+    response = client.post('/api/comments', json=comment_data, headers=headers)
     return response, headers
 
 def test_create_comment(client):
@@ -51,17 +51,17 @@ def test_update_comment(client):
     update_data = {
         'content': 'SomeNewContent'
     }
-    response = client.put('/comments/1', json=update_data, headers=headers)
+    response = client.put('/api/comments/1', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
 
 def test_delete_comment(client):
     _, headers = create_comment(client)
-    response = client.delete('/comments/1', headers=headers)
+    response = client.delete('/api/comments/1', headers=headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 def test_delete_unauthorized(client):
     create_comment(client)
-    response = client.delete('/comments/1')
+    response = client.delete('/api/comments/1')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 def test_update_not_your_comment(client):
@@ -70,12 +70,12 @@ def test_update_not_your_comment(client):
             'username': 'testuser1',
             'password': 'securepassword123'
     }
-    response = client.post('/auth/login', json=login_data)
+    response = client.post('/api/auth/login', json=login_data)
     data = response.json()
     access_token = data['access_token']
     headers = {'Authorization': f'Bearer {access_token}'}
     update_data = {
         'content': 'SomeNewContent'
     }
-    response = client.put('/comments/1', json=update_data, headers=headers)
+    response = client.put('/api/comments/1', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN

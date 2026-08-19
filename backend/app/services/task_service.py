@@ -4,6 +4,11 @@ from ..repositories import TaskRepository, UserRepository, ProjectRepository
 from ..schemas.task import TaskResponse, TaskCreate, TaskUpdate
 from ..services.notification_service import NotificationService
 from fastapi import HTTPException, status
+from typing import Optional, Union, Literal
+from ..schemas.user import UserResponse
+from ..enums import TaskStatus, Priority
+from ..config import settings
+
 
 class TaskService:
     def __init__(
@@ -18,9 +23,25 @@ class TaskService:
         self.project_repository = project_repository
         self.notification_service = notification_service
 
-    def get_all_task(self) -> List[TaskResponse]:
-        tasks = self.repository.get_all()
-        return [TaskResponse.model_validate(task) for task in tasks]
+    def get_all_tasks_for_user(
+            self,
+            user_id: int,
+            skip: int = 0, 
+            limit: int = 100,
+            project_id: Optional[int] = None,
+            status: Optional[Union[TaskStatus, Literal['active']]] = None,
+            priority: Optional[Priority] = None,
+            is_project_owner: bool = False,
+            query: Optional[str] = None
+    ) -> dict:
+        tasks = self.repository.get_for_user(user_id, skip, limit, project_id, status, priority, is_project_owner, query)
+        task_count = self.repository.count_my_tasks(user_id, project_id, status, priority, is_project_owner, query)
+        return {
+            'items': [TaskResponse.model_validate(t) for t in tasks],
+            'total': task_count,
+            'limit': limit,
+            'skip': skip
+        }
 
     def get_task_by_id(self, task_id: int) -> TaskResponse:
         task = self.repository.get_by_id(task_id)
@@ -67,6 +88,10 @@ class TaskService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f'Пользователь {user_id} не является участником проекта'
                     )
+        if self.repository.count_by_creator(creator_id) >= settings.MAX_TASKS_PER_USER:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Превышено максимальное число задач на пользователя')
+        if self.repository.count_by_project(task_data.project_id) >= settings.MAX_TASKS_PER_PROJECT:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Превышено максимальное число задач на проект')
         task = self.repository.create(task_data, creator_id)
         if task_data.assignee_ids:
             for user_id in task_data.assignee_ids:
@@ -170,10 +195,6 @@ class TaskService:
         tasks = user.assigneed_tasks
         return [TaskResponse.model_validate(task) for task in tasks]
 
-    def get_my_tasks(self, user_id: int, skip: int = 0, limit: int = 10) -> List[TaskResponse]:
-        tasks = self.repository.get_by_user(user_id, skip, limit)
-        return [TaskResponse.model_validate(task) for task in tasks]
-
     def update_assignees(self, task_id: int, assignee_ids: List[int]) -> TaskResponse:
         task = self.repository.get_by_id(task_id)
         if not task:
@@ -197,3 +218,7 @@ class TaskService:
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Задача не найдена')
         return TaskResponse.model_validate(task)
+
+    def get_task_assignees(self, task_id: int) -> List[UserResponse]:
+        assignees = self.repository.get_task_assignees(task_id)
+        return [UserResponse.model_validate(a) for a in assignees]

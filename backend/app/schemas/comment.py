@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
+from ..schemas.user import UserBriefResponse
 
 
 class CommentBase(BaseModel):
@@ -21,5 +22,6 @@ class CommentResponse(CommentBase):
     author_id: int = Field(..., gt=0, description='id автора комментария')
     created_at: datetime = Field(..., description='Время создания')
     updated_at: datetime = Field(..., description='Время обновления')
+    author: Optional[UserBriefResponse] = None
 
     model_config = ConfigDict(from_attributes=True)

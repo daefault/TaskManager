@@ -14,15 +14,16 @@ router = APIRouter(
     tags=['projects']
 )
 
-@router.get('', response_model=List[ProjectResponse], status_code=status.HTTP_200_OK)
+@router.get('', response_model=dict, status_code=status.HTTP_200_OK)
 def get_my_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=10, le=100),
     status: Optional[Status] = Query(None, decsription='Статус проекта (active или archived)'),
+    q: Optional[str] = Query(None, max_length=100, description='Строка для поиска по названию проекта'),
     current_user: User = Depends(get_current_user),
     service: ProjectService = Depends(get_project_service)
 ):
-    return service.get_projects_for_user(current_user.id, skip, limit, status)
+    return service.get_projects_for_user(current_user.id, skip, limit, status, q)
 
 @router.get('/all', response_model=List[ProjectResponse], status_code=status.HTTP_200_OK)
 def get_all_projects(service: ProjectService = Depends(get_project_service), admin: User = Depends(require_admin)):
@@ -50,6 +51,16 @@ def get_project_by_name(
                     detail='Нет доступа к этому проекту'
                 )
     return project
+
+@router.get('/search', response_model=dict, status_code=status.HTTP_200_OK)
+def search_projects(
+    q: str = Query(..., max_length=100, description='Название проекта для поиска'),
+    skip: int = Query(..., ge=0),
+    limit: int = Query(..., ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    service: ProjectService = Depends(get_project_service)
+):
+    return service.search_projects(current_user.id, q, skip, limit)
 
 @router.put('/{project_id}', response_model=ProjectResponse, status_code=status.HTTP_200_OK)
 def update_project(
@@ -114,6 +125,14 @@ def get_all_members_in_project(
     if project.owner_id != current_user.id and current_user.id not in [m.id for m in project.members]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='У вас нет доступа к этому проекту')
     return service.get_all_members_in_project(project_id)
+
+@router.post('/{project_id}/leave', response_model=ProjectResponse, status_code=status.HTTP_200_OK)
+def leave_project(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    service: ProjectService = Depends(get_project_service)
+):
+    return service.leave_project(project_id, current_user.id)
 
 @router.post('/{project_id}/members/{user_id}', response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def add_member(

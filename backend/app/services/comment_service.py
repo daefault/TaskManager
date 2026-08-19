@@ -38,15 +38,6 @@ class CommentService:
         comment = self.repository.create(comment_data, author_id)
         return CommentResponse.model_validate(comment)
 
-    def get_multiple_comment_by_id(self, comment_ids: List[int]) -> List[CommentResponse]:
-        comments = self.repository.get_multiple_by_ids(comment_ids)
-        if not comments:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Комментарии с такими id не найдены"
-            )
-        return [CommentResponse.model_validate(comment) for comment in comments]
-
     def update_comment(self, comment_id: int, comment_data: CommentUpdate) -> CommentResponse:
         if not self.repository.exists(comment_id):
             raise HTTPException(
@@ -65,13 +56,13 @@ class CommentService:
                 detail=f'Комментарий с id {comment_id} не найден'
             )
 
-    def get_comments_by_task(self, task_id: int) -> List[CommentResponse]:
+    def get_comments_by_task(self, task_id: int, skip: int = 0, limit: int = 10) -> List[CommentResponse]:
         if not self.task_repository.exists(task_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Задача с id {task_id} не найдена'
             )
-        comments = self.repository.get_by_task_id(task_id)
+        comments = self.repository.get_by_task_id(task_id, skip, limit)
         return [CommentResponse.model_validate(comment) for comment in comments]
 
     def get_comments_by_author(self, author_id: int) -> List[CommentResponse]:
@@ -82,3 +73,6 @@ class CommentService:
             )
         comments = self.repository.get_by_author_id(author_id)
         return [CommentResponse.model_validate(comment) for comment in comments]
+
+    def count_comments_by_user(self, author_id: int) -> int:
+        return self.repository.count_comments_by_author(author_id)
