@@ -4,6 +4,8 @@ from ..repositories import UserRepository
 from ..schemas.user import UserResponse, UserCreate, UserUpdate, UserBriefResponse
 from fastapi import HTTPException, status
 
+
+
 class UserService:
     def __init__(self, user_repository: UserRepository):
         self.repository = user_repository
@@ -35,14 +37,14 @@ class UserService:
         user = self.repository.create(user_data)
         return UserResponse.model_validate(user)
 
-    def get_multiple_user_by_id(self, user_ids: List[int]) -> List[UserBriefResponse]:
-        users = self.repository.get_multiple_by_ids(user_ids)
-        if not users:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Пользователи с такими id не найдены"
-            )
-        return [UserBriefResponse.model_validate(user) for user in users]
+    # def get_multiple_user_by_id(self, user_ids: List[int]) -> List[UserBriefResponse]:
+    #     users = self.repository.get_multiple_by_ids(user_ids)
+    #     if not users:
+    #         raise HTTPException(
+    #             status_code=status.HTTP_404_NOT_FOUND,
+    #             detail="Пользователи с такими id не найдены"
+    #         )
+    #     return [UserBriefResponse.model_validate(user) for user in users]
 
     def update_user(self, user_id: int, user_data: UserUpdate) -> UserResponse:
         if not self.repository.exists(user_id):
@@ -69,12 +71,15 @@ class UserService:
         return UserResponse.model_validate(updated_user)
 
     def delete_user(self, user_id: int) -> None:
-        user = self.repository.soft_delete(user_id)
-        if not user:
+        if not self.repository.exists(user_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Пользователь с id {user_id} не найден'
             )
+        self.repository.soft_delete(user_id)
+        from app.tasks import send_user_inactive_reminder
+        send_user_inactive_reminder.delay(user_id)
+
 
     def get_by_username(self, username: str) -> UserResponse:
         user = self.repository.get_by_username(username)

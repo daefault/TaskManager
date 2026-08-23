@@ -178,7 +178,8 @@ function displayTasks(tasks, total) {
             'pending': 'secondary',
             'in_progress': 'primary',
             'done': 'success',
-            'cancelled': 'danger'
+            'cancelled': 'danger',
+            'overdue': 'danger'
         };
         const priorityLabels = {
             'low': 'Низкий',

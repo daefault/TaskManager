@@ -10,6 +10,11 @@ load_dotenv()
 class Settings(BaseSettings):
     app_name: str = 'TaskManager'
     database_url: str = os.getenv('DATABASE_URL','postgresql://postgres:postgres@db:5432/fastapi_db')
+    redis_url: str = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+    celery_broker_url: str = os.getenv('CELERY_BROKER_URL','redis://redis:6379/0')
+    celery_result_backend: str = os.getenv('CELERY_RESULT_BACKEND','redis://redis:6379/0')
+
+
 
     SECRET_KEY: str = os.getenv('SECRET_KEY')
     ALGORITHM: str = 'HS256'
@@ -19,9 +24,12 @@ class Settings(BaseSettings):
     MAX_TASKS_PER_PROJECT: int = 500
     MAX_TASKS_PER_USER: int = 1000
     MAX_COMMENTS_PER_USER: int = 10000
+    MAX_NOTIFICATIONS_PER_USER: int = 1000
+    DAYS_TO_DELETE_NOTIFICATIONS: int = 30
     
     model_config = ConfigDict(
-        env_file = '.env'
+        env_file = '.env',
+        extra = 'ignore'
     )
        
 

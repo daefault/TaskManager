@@ -10,7 +10,8 @@ function translateStatus(status) {
         'pending': 'Ожидает',
         'in_progress': 'В работе',
         'done': 'Выполнено',
-        'cancelled': 'Отменено'
+        'cancelled': 'Отменено',
+        'overdue': 'Просрочено'
     };
     return translations[status] || status;
 }
@@ -34,7 +35,8 @@ function getStatusColor(status) {
         'pending': 'secondary',
         'in_progress': 'primary',
         'done': 'success',
-        'cancelled': 'danger'
+        'cancelled': 'danger',
+        'overdue': 'danger'
     };
     return colors[status] || 'secondary';
 }

@@ -17,14 +17,13 @@ class UserRepository(BaseRepository[User]):
     def get_by_email(self, email: str) -> Optional[User]:
         return self.db.query(User).filter(User.email == email).first()
 
-    def soft_delete(self, user_id: int) -> Optional[User]:
+    def soft_delete(self, user_id: int) -> None:
         user = self.db.query(User).filter(User.id == user_id).first()
         if not user: 
             return False
         user.is_active = False
         self.db.commit()
         self.db.refresh(user)
-        return user
 
     def exists(self, user_id: int) -> bool:
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -32,6 +31,12 @@ class UserRepository(BaseRepository[User]):
             return False
         return True
 
+    def is_user_inactive(self, user_id: int) -> bool:
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user or user.is_active:
+            return False
+        return True
+    
     def restore_user(self, user_id: int) -> Optional[User]:
         user = self.db.query(User).filter(User.id == user_id).first()
         if not user: 

@@ -5,7 +5,7 @@ from .base import BaseRepository
 from ..schemas.task import TaskCreate, TaskUpdate
 from ..enums import TaskStatus, Priority
 from sqlalchemy.orm import selectinload
-
+from datetime import datetime, timedelta
 
 
 class TaskRepository(BaseRepository[Task]):
@@ -101,7 +101,8 @@ class TaskRepository(BaseRepository[Task]):
             if status == 'active':
                 query = query.filter(
                     (Task.status != TaskStatus.DONE) & 
-                    (Task.status != TaskStatus.CANCELLED)
+                    (Task.status != TaskStatus.CANCELLED) &
+                    (Task.status != TaskStatus.OVERDUE)
                     )
             else:
                 query = query.filter(Task.status == status)
@@ -137,7 +138,8 @@ class TaskRepository(BaseRepository[Task]):
             if status == 'active':
                 query = query.filter(
                     (Task.status != TaskStatus.DONE) &
-                    (Task.status != TaskStatus.CANCELLED)
+                    (Task.status != TaskStatus.CANCELLED) &
+                    (Task.status != TaskStatus.OVERDUE)
                 )
             else:
                 query = query.filter(Task.status == status)
@@ -175,3 +177,16 @@ class TaskRepository(BaseRepository[Task]):
     def count_by_project(self, project_id: int) -> int:
         return self.db.query(Task).filter(Task.project_id == project_id).count()
 
+    def check_overdue_task(self) -> List[Task]:
+        now = datetime.now(datetime.timezone.utc)
+        tasks = self.db.query(Task).filter(
+            Task.deadline.isnot(None),
+            Task.deadline < now,
+            Task.status.notin_([TaskStatus.DONE, TaskStatus.CANCELLED, TaskStatus.OVERDUE])
+        ).all()
+        
+        for task in tasks:
+            task.status = TaskStatus.OVERDUE
+        self.db.commit()
+        return tasks
+        

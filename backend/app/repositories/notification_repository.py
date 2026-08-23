@@ -43,11 +43,9 @@ class NotificationRepository(BaseRepository[Notification]):
         self.db.commit()
         return count
 
-    def delete_old_notification(self, days: int = 30) -> int:
+    def delete_old_notification_for_user(self, user_id: int, days: int = 30) -> int:
         cutoff = datetime.utcnow() - timedelta(days=days)
-        old = self.db.query(Notification).filter(Notification.created_at < cutoff).all()
-        count = len(old)
-        for notification in old:
-            self.db.delete(notification)
+        self.db.query(Notification).filter(
+            Notification.created_at < cutoff, 
+            Notification.user_id == user_id).delete(synchronize_session=False)
         self.db.commit()
-        return count

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from typing import List
-from ..dependencies import get_user_service, require_admin, get_current_user
-from ..services import UserService
+from ..dependencies import get_user_service, require_admin, get_current_user, get_notification_service
+from ..services import UserService, NotificationService
 from ..schemas.user import UserResponse, UserBriefResponse, UserCreate, UserUpdate
 from ..models import User
+
 
 router = APIRouter(
     prefix='/users',
@@ -68,11 +69,16 @@ def get_user_by_id(user_id: int, service: UserService = Depends(get_user_service
 def update_user(user_id: int, user_data: UserUpdate, service: UserService = Depends(get_user_service), admin: User = Depends(require_admin)):
     return service.update_user(user_id, user_data)
 
-@router.delete('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, service: UserService = Depends(get_user_service), admin: User = Depends(require_admin)):
-    service.delete_user(user_id)
-
 @router.patch('/{user_id}', status_code=status.HTTP_200_OK)
 def restore_user(user_id: int, service: UserService = Depends(get_user_service), admin: User = Depends(require_admin)):
     return service.restore_user(user_id)
      
+@router.patch('/soft-delete/{user_id}', status_code=status.HTTP_200_OK)
+def delete_user(
+    user_id: int, 
+    service: UserService = Depends(get_user_service), 
+    notification_service: NotificationService = Depends(get_notification_service),  
+    admin: User = Depends(require_admin)
+    ):
+    service.delete_user(user_id)
+    notification_service.user_inactive_reminder(user_id)

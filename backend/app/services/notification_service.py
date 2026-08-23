@@ -4,6 +4,7 @@ from ..repositories import NotificationRepository, UserRepository
 from ..schemas.notification import NotificationResponse, NotificationCreate, NotificationUpdate
 from fastapi import HTTPException, status
 from ..enums import NotificationType
+from ..config import settings
 
 
 class NotificationService:
@@ -33,17 +34,19 @@ class NotificationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Пользователь с id {notification_data.user_id} не найден'
             )
+        if self.repository.get_by_user_count(notification_data.user_id) >= settings.MAX_NOTIFICATIONS_PER_USER:
+            self.repository.delete_old_notification_for_user(notification_data.user_id, days=settings.DAYS_TO_DELETE_NOTIFICATIONS)
         notification = self.repository.create(notification_data)
         return NotificationResponse.model_validate(notification)
 
-    def update_notification(self, notification_id: int, notification_data: NotificationUpdate) -> NotificationResponse:
-        if not self.repository.exists(notification_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f'Уведомление с id {notification_id} не найдено'
-            )
-        updated_notification = self.repository.update(notification_id, notification_data)
-        return NotificationResponse.model_validate(updated_notification)
+    # def update_notification(self, notification_id: int, notification_data: NotificationUpdate) -> NotificationResponse:
+    #     if not self.repository.exists(notification_id):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_404_NOT_FOUND,
+    #             detail=f'Уведомление с id {notification_id} не найдено'
+    #         )
+    #     updated_notification = self.repository.update(notification_id, notification_data)
+    #     return NotificationResponse.model_validate(updated_notification)
 
     def delete_notification(self, notification_id: int) -> None:
         if self.repository.delete(notification_id):
@@ -59,7 +62,7 @@ class NotificationService:
             user_id: int, 
             skip: int = 0, 
             limit: int = 100, 
-            is_read: Optional[bool] = False
+            is_read: Optional[bool] = None
 ) -> List[NotificationResponse]:
         if not self.user_repository.exists(user_id):
             raise HTTPException(
@@ -96,22 +99,19 @@ class NotificationService:
         count = self.repository.mark_all_as_read(user_id)
         return {'user_id': user_id, 'marked_count': count}
 
-    def delete_old_notifications(self, days: int = 30) -> dict:
-        count = self.repository.delete_old_notification(days)
-        return {'deleted_count': count, 'older_than_days': days}
-
 #МЕТОДЫ ДЛЯ СОЗДАНИЯ РАЗНЫХ ТИПОВ УВЕДОМЛЕНИЙ
-    def notify_task_assigned(self, user_id: int, task_title: str) -> NotificationResponse:
+    def notify_task_assigned(self, user_id: int, task_title: str, task_id: int) -> NotificationResponse:
         message = f'Вам назначена задача: {task_title}'
-        notification = NotificationCreate(user_id=user_id, notification_type=NotificationType.TASK_ASSIGNED, message=message)
-        return self.create_notification(notification)
-        
-    def notify_status_changed(self, user_id: int, task_title: str, new_status: str) -> NotificationResponse:
-        message = f'Статус задачи {task_title} изменен на {new_status}'
-        notification = NotificationCreate(user_id=user_id, notification_type=NotificationType.STATUS_CHANGED, message=message)
+        link = f'/tasks/{task_id}'
+        notification = NotificationCreate(user_id=user_id, notification_type=NotificationType.TASK_ASSIGNED, message=message, link=link)
         return self.create_notification(notification)
 
-    def notify_deadline_reminder(self, user_id: int, task_title: str, deadline: str) -> NotificationResponse:
-        message = f'Приближается дедлайн задачи: {task_title} (до {deadline})'
-        notification = NotificationCreate(user_id=user_id, notification_type=NotificationType.DEADLINE_REMINDER, message=message)
-        return self.create_notification(notification)
+    def user_inactive_reminder(self, user_id: int) -> NotificationResponse:
+        message = f'Ваша учётная запись была отключена из-за неактивности'
+        notification = NotificationCreate(user_id=user_id, notification_type=NotificationType.USER_INACTIVE, message=message)
+        if not self.user_repository.is_user_inactive(user_id):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Пользователь активен или не существует')
+        if self.repository.get_by_user_count(notification.user_id) >= settings.MAX_NOTIFICATIONS_PER_USER:
+            self.repository.delete_old_notification_for_user(notification.user_id, days=settings.DAYS_TO_DELETE_NOTIFICATIONS)
+        notification = self.repository.create(notification)
+        return NotificationResponse.model_validate(notification)

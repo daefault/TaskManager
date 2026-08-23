@@ -18,14 +18,6 @@ def get_all_notifications(
 ):
     return service.get_all_notification()
 
-@router.delete('/old', response_model=dict)
-def delete_old_notification(
-    days: int = Query(30, ge=1, description='Удалить уведомления старше N дней'),
-    admin: User = Depends(require_admin),
-    service: NotificationService = Depends(get_notification_service)
-):
-    return service.delete_old_notifications(days)
-
 @router.put('/read-all', response_model=dict)
 def mark_all_as_read(
     current_user: User = Depends(get_current_user),
@@ -66,14 +58,14 @@ def get_notification_by_id(
 ):
     return service.get_notification_by_id(notification_id)
 
-@router.put('/{notification_id}', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
-def update_notification(
-    notification_id: int, 
-    notification_data: NotificationUpdate, 
-    service: NotificationService = Depends(get_notification_service),
-    admin: User = Depends(require_admin)
-):
-    return service.update_notification(notification_id, notification_data)
+# @router.put('/{notification_id}', response_model=NotificationResponse, status_code=status.HTTP_200_OK)
+# def update_notification(
+#     notification_id: int, 
+#     notification_data: NotificationUpdate, 
+#     service: NotificationService = Depends(get_notification_service),
+#     admin: User = Depends(require_admin)
+# ):
+#     return service.update_notification(notification_id, notification_data)
 
 @router.delete('/{notification_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_notification(

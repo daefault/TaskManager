@@ -2,13 +2,12 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..repositories import TaskRepository, UserRepository, ProjectRepository
 from ..schemas.task import TaskResponse, TaskCreate, TaskUpdate
-from ..services.notification_service import NotificationService
 from fastapi import HTTPException, status
 from typing import Optional, Union, Literal
 from ..schemas.user import UserResponse
 from ..enums import TaskStatus, Priority
 from ..config import settings
-
+from datetime import datetime, timedelta
 
 class TaskService:
     def __init__(
@@ -16,12 +15,10 @@ class TaskService:
             task_repository: TaskRepository,
             user_repository: UserRepository,
             project_repository: ProjectRepository,
-            notification_service: NotificationService
             ):
         self.repository = task_repository
         self.user_repository = user_repository
         self.project_repository = project_repository
-        self.notification_service = notification_service
 
     def get_all_tasks_for_user(
             self,
@@ -95,9 +92,11 @@ class TaskService:
         task = self.repository.create(task_data, creator_id)
         if task_data.assignee_ids:
             for user_id in task_data.assignee_ids:
-                self.notification_service.notify_task_assigned(
+                from app.tasks import send_task_assigned_notification
+                send_task_assigned_notification.delay(
                     user_id=user_id,
-                    task_title=task.title
+                    task_title=task.title,
+                    task_id = task.id
                 )
         return TaskResponse.model_validate(task)
 
@@ -165,9 +164,11 @@ class TaskService:
                 detail=f'Пользователь {user_id} не участник проекта'
             )
         task = self.repository.add_assignee(task_id, user_id)
-        self.notification_service.notify_task_assigned(
+        from app.tasks import send_task_assigned_notification
+        send_task_assigned_notification.delay(
             user_id=user_id, 
-            task_title=task.title
+            task_title=task.title,
+            task_id=task.id
         )
         return TaskResponse.model_validate(task)
 
@@ -210,13 +211,15 @@ class TaskService:
                     detail=f'Пользователь {user_id} не участник проекта'
             )
         task = self.repository.update_assignees(task_id, assignee_ids)
-        for user_id in assignee_ids:
-            self.notification_service.notify_task_assigned(
-                    user_id=user_id,
-                    task_title=task.title
-            )
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Задача не найдена')
+        for user_id in assignee_ids:
+            from app.tasks import send_task_assigned_notification
+            send_task_assigned_notification(
+                    user_id=user_id,
+                    task_title=task.title,
+                    task_id = task.id
+            )
         return TaskResponse.model_validate(task)
 
     def get_task_assignees(self, task_id: int) -> List[UserResponse]:
