@@ -31,9 +31,7 @@ def send_user_inactive_reminder(user_id: int) -> dict:
         notification_repository = NotificationRepository(db)
         user_repository = UserRepository(db)
         notification_service = NotificationService(notification_repository, user_repository)
-        notification_service.notify_deadline_reminder(
-            user_id=user_id
-        )
+        notification_service.notify_deadline_reminder(user_id=user_id)
         return {'status': 'success', 'user_id': user_id}
     except Exception as e:
         return {'status': 'error', 'error': str(e)}
@@ -53,7 +51,7 @@ def check_overdue_tasks() -> dict:
     except Exception as e:
         return {
             'status': 'error',
-            'error': e
+            'error': str(e)
         }
     finally:
         db.close()

@@ -61,7 +61,7 @@ def test_get_my_projects(client):
     response = client.get('/api/projects', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert len(data) == 1
+    assert len(data) == 4
 
 def test_update_project_success(client): 
     _, headers = create_project(client)

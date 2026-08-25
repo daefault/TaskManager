@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadProject();
     loadMembers();
+    updateUnreadCount();
 
     // ===== КНОПКИ =====
     document.getElementById('logoutBtn').addEventListener('click', function() {

@@ -5,6 +5,7 @@ from ..schemas.notification import NotificationResponse, NotificationCreate, Not
 from fastapi import HTTPException, status
 from ..enums import NotificationType
 from ..config import settings
+from ..models import Notification
 
 
 class NotificationService:
@@ -63,14 +64,15 @@ class NotificationService:
             skip: int = 0, 
             limit: int = 100, 
             is_read: Optional[bool] = None
-) -> List[NotificationResponse]:
+) -> tuple[List[Notification], int]:
         if not self.user_repository.exists(user_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f'Пользователь с id {user_id} не найден'
             )
         notifications = self.repository.get_by_user(user_id, skip, limit, is_read)
-        return [NotificationResponse.model_validate(n) for n in notifications]
+        total = self.repository.get_by_user_count(user_id, is_read)
+        return notifications, total
 
     def get_unread_count(self, user_id: int) -> dict:
         if not self.user_repository.exists(user_id):
@@ -98,6 +100,46 @@ class NotificationService:
             )
         count = self.repository.mark_all_as_read(user_id)
         return {'user_id': user_id, 'marked_count': count}
+
+    def bulk_mark_as_read(self, user_id: int, notification_ids: List[int]) -> int:
+        if not self.user_repository.exists(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Пользователь {user_id} не найден'
+            )
+        for notification in notification_ids:
+            if not self.repository.exists(notification):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='Уведомление не найдено'
+                ) 
+        count = self.repository.bulk_mark_as_read(user_id, notification_ids)
+        return count
+
+    def bulk_delete(self, user_id: int, notification_ids: List[int]) -> int:
+        if not self.user_repository.exists(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Пользователь {user_id} не найден'
+            ) 
+        for notification in notification_ids:
+            if not self.repository.exists(notification):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='Уведомление не найдено'
+                ) 
+        count = self.repository.bulk_delete(user_id, notification_ids)
+        return count
+
+    def delete_all_read(self, user_id: int) -> int:
+        if not self.user_repository.exists(user_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Пользователь {user_id} не найден'
+            ) 
+        count = self.repository.delete_all_read(user_id)
+        return count
+
 
 #МЕТОДЫ ДЛЯ СОЗДАНИЯ РАЗНЫХ ТИПОВ УВЕДОМЛЕНИЙ
     def notify_task_assigned(self, user_id: int, task_title: str, task_id: int) -> NotificationResponse:

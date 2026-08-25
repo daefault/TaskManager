@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from ..enums import NotificationType
 from datetime import datetime
+
 
 
 class NotificationBase(BaseModel):
@@ -24,3 +25,7 @@ class NotificationResponse(NotificationBase):
     link: Optional[str] = Field(None, description='Ссылка на задачу')
     
     model_config = ConfigDict(from_attributes=True)
+
+#Модель для множественного удаления и отметок о прочитанности уведомления
+class BulkActionRequest(BaseModel):
+    notification_ids: List[int]

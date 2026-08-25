@@ -30,7 +30,7 @@ def create_task(client):
         'description': 'VOT TAK VOT',
         'status': 'pending',
         'priority': 'low', 
-        "deadline": "2026-08-11T16:59:35.169Z",
+        "deadline": "2060-08-11T16:59:35.169Z",
         'project_id': 1,
         'assignee_ids': [2]
     }
@@ -43,7 +43,7 @@ def test_create_task_success(client):
 
 def test_get_my_tasks_success(client):
     _, headers = create_task(client)
-    response = client.get('/api/tasks/my', headers=headers)
+    response = client.get('/api/tasks', headers=headers)
     assert response.status_code == status.HTTP_200_OK
 
 def test_update_task_success(client):

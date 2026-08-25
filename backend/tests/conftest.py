@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from pathlib import Path
+from unittest.mock import patch
+
 
 env_path = Path(__file__).parent.parent / '.env.test'
 load_dotenv(env_path)
@@ -42,3 +44,9 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
 
     return TestClient(app)
+
+#Заглушка для Celery во время тестов
+@pytest.fixture(autouse=True)
+def mock_celery_tasks():
+    with patch('app.tasks.send_task_assigned_notification.delay') as mock:
+        yield mock

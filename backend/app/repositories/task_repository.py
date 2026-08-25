@@ -5,7 +5,7 @@ from .base import BaseRepository
 from ..schemas.task import TaskCreate, TaskUpdate
 from ..enums import TaskStatus, Priority
 from sqlalchemy.orm import selectinload
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class TaskRepository(BaseRepository[Task]):
@@ -178,7 +178,7 @@ class TaskRepository(BaseRepository[Task]):
         return self.db.query(Task).filter(Task.project_id == project_id).count()
 
     def check_overdue_task(self) -> List[Task]:
-        now = datetime.now(datetime.timezone.utc)
+        now = datetime.now(timezone.utc)
         tasks = self.db.query(Task).filter(
             Task.deadline.isnot(None),
             Task.deadline < now,

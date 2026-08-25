@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setUserName();
     loadTask();
+    updateUnreadCount();
 
     // ===== ВЫХОД =====
     document.getElementById('logoutBtn').addEventListener('click', function() {

@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProjectInfo();
     loadTasks();
     setUserName();
+    updateUnreadCount();
 
     document.getElementById('logoutBtn').addEventListener('click', function() {
         // Показываем модалку вместо прямого выхода

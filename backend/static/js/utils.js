@@ -64,3 +64,24 @@ function formatDate(dateString) {
         minute: '2-digit'
     });
 }
+
+async function updateUnreadCount() {
+    try {
+        const response = await fetchWithAuth('/api/notifications/unread-count');
+        if (response.ok) {
+            const data = await response.json();
+            const badge = document.getElementById('unreadBadge');
+            if (badge) {
+                const count = data.unread_count || 0;
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка получения количества уведомлений:', error);
+    }
+}

@@ -49,3 +49,27 @@ class NotificationRepository(BaseRepository[Notification]):
             Notification.created_at < cutoff, 
             Notification.user_id == user_id).delete(synchronize_session=False)
         self.db.commit()
+
+    def bulk_mark_as_read(self, user_id: int, notifications_ids: List[int]) -> int:
+        count = self.db.query(Notification).filter(
+            Notification.user_id == user_id,
+            Notification.id.in_(notifications_ids),
+            Notification.is_read == False 
+            ).update({'is_read': True}, synchronize_session=False)
+        self.db.commit()
+        return count
+
+    def bulk_delete(self, user_id: int, notification_ids: List[int]) -> int:
+        count = self.db.query(Notification).filter(
+            Notification.user_id == user_id, 
+            Notification.id.in_(notification_ids)
+        ).delete(synchronize_session=False)
+        self.db.commit()
+        return count       
+
+    def delete_all_read(self, user_id: int) -> int:
+        count = self.db.query(Notification).filter(
+            Notification.user_id == user_id
+        ).delete(synchronize_session=False)
+        self.db.commit()
+        return count

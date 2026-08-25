@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setUserName();
     loadProjects();
+    updateUnreadCount();
     document.getElementById('logoutBtn').addEventListener('click', function() {
         // Показываем модалку вместо прямого выхода
         const modal = new bootstrap.Modal(document.getElementById('confirmLogoutModal'));

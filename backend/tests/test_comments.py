@@ -30,7 +30,7 @@ def create_comment(client):
         'description': 'VOT TAK VOT',
         'status': 'pending',
         'priority': 'low', 
-        "deadline": "2026-08-11T16:59:35.169Z",
+        "deadline": "2060-08-11T16:59:35.169Z",
         'project_id': 1,
         'assignee_ids': []
     }

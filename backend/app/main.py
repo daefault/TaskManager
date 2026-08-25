@@ -43,6 +43,10 @@ def register_page(request: Request):
 def task_detail_page(request: Request):
     return templates.TemplateResponse(request=request, name='task_detail.html')
 
+@app.get('/notifications')
+def notifications_page(request: Request):
+    return templates.TemplateResponse(request=request, name='notifications.html')
+
 @app.get('/health')
 def health_check():
     return {'status': 'healthy'}
