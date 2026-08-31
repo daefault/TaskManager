@@ -3,7 +3,9 @@ from typing import List
 from ..repositories import UserRepository
 from ..schemas.user import UserResponse, UserCreate, UserUpdate, UserBriefResponse
 from fastapi import HTTPException, status
+import logging
 
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -77,6 +79,7 @@ class UserService:
                 detail=f'Пользователь с id {user_id} не найден'
             )
         self.repository.soft_delete(user_id)
+        logger.info('User %s deleted successfully', user_id)
         from app.tasks import send_user_inactive_reminder
         send_user_inactive_reminder.delay(user_id)
 
@@ -106,6 +109,7 @@ class UserService:
                 status_code = status.HTTP_404_NOT_FOUND,
                 detail='Пользователь не найден'
             )
+        logger.info('User %s restored successfully', user_id)
         return UserResponse.model_validate(user)
 
     def search_users(self, query: str, limit: int = 10) -> List[UserResponse]:

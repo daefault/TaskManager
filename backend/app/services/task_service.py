@@ -8,6 +8,10 @@ from ..schemas.user import UserResponse
 from ..enums import TaskStatus, Priority
 from ..config import settings
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class TaskService:
     def __init__(
@@ -90,6 +94,7 @@ class TaskService:
         if self.repository.count_by_project(task_data.project_id) >= settings.MAX_TASKS_PER_PROJECT:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Превышено максимальное число задач на проект')
         task = self.repository.create(task_data, creator_id)
+        logger.info('Task created successfully, title = %s, project_id = %s, creator_id = %s', task_data.title, task_data.project_id, creator_id)
         if task_data.assignee_ids:
             for user_id in task_data.assignee_ids:
                 from app.tasks import send_task_assigned_notification
@@ -129,6 +134,7 @@ class TaskService:
 
     def delete_task(self, task_id: int) -> None:
         if self.repository.delete(task_id):
+            logger.info('Task %s deleted succesfully', task_id)
             return
         else:
             raise HTTPException(
@@ -164,6 +170,7 @@ class TaskService:
                 detail=f'Пользователь {user_id} не участник проекта'
             )
         task = self.repository.add_assignee(task_id, user_id)
+        logger.info('Successfully added user %s in task %s', user_id, task_id)
         from app.tasks import send_task_assigned_notification
         send_task_assigned_notification.delay(
             user_id=user_id, 
@@ -184,6 +191,7 @@ class TaskService:
                         detail=f'Пользователь с id {user_id} не найден'
                     )
         task = self.repository.remove_assignee(task_id, user_id)
+        logger.info('Successfully removed user %s from task %s', user_id, task_id)
         return TaskResponse.model_validate(task)
 
     def get_assigned_tasks(self, user_id: int) -> List[TaskResponse]:

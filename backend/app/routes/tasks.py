@@ -8,7 +8,6 @@ from typing import Optional, Union, Literal
 from ..enums import TaskStatus, Priority
 from ..schemas.user import UserResponse
 
-
 router = APIRouter(
     prefix='/tasks',
     tags=['tasks']

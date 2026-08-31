@@ -1,8 +1,14 @@
+from .logger import setup_logging
+import logging
+setup_logging()
+logger = logging.getLogger(__name__)
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from .config import settings
 from fastapi.templating import Jinja2Templates
 from .routes import project_router, user_router, comment_router, notification_router, task_router, auth_router
+
 
 app = FastAPI(
     title=settings.app_name
@@ -17,6 +23,9 @@ app.include_router(user_router, prefix='/api')
 app.include_router(comment_router, prefix='/api')
 app.include_router(notification_router, prefix='/api')
 app.include_router(task_router, prefix='/api')
+
+
+logger.info('Routers ready')
 
 
 @app.get('/')
@@ -50,3 +59,7 @@ def notifications_page(request: Request):
 @app.get('/health')
 def health_check():
     return {'status': 'healthy'}
+
+@app.on_event('startup') 
+def startup():
+    logger.info('Application started')

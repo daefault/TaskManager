@@ -7,7 +7,9 @@ from fastapi import HTTPException, status
 from ..enums import Status
 from typing import Optional
 from ..config import settings
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ProjectService:
     def __init__(self, project_repository: ProjectRepository, user_repository: UserRepository, task_repository: TaskRepository):
@@ -54,6 +56,8 @@ class ProjectService:
         if project_count >= settings.MAX_PROJECTS_PER_USER:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Достигнуто максимальное число проектов')
         project = self.repository.create(project_data, owner_id)
+        logger.info('Successfully created project, project_name = %s, owner_id = %s', project_data.name, owner_id)
+
         return ProjectResponse.model_validate(project)
 
     def update_project(self, project_id: int, project_data: ProjectUpdate) -> ProjectResponse:
@@ -78,6 +82,7 @@ class ProjectService:
 
     def delete_project(self, project_id: int) -> None:
         if self.repository.delete(project_id):
+            logger.info('Succesfully deleted project %s', project_id)
             return
         else:
             raise HTTPException(
@@ -133,6 +138,7 @@ class ProjectService:
         if any(m.id == user_id for m in project.members):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Такой пользователь уже есть в проекте')
         updated_project = self.repository.add_member(project_id, user_id)
+        logger.info('Successfully added member %s in project %s', user_id, project_id)
         return ProjectResponse.model_validate(updated_project)
 
     def remove_member(self, project_id: int, user_id: int, current_user_id: int) -> ProjectResponse:
@@ -149,6 +155,7 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Нельзя удалить владельца')
         updated_project = self.repository.remove_member(project_id, user_id)
         self.task_repository.remove_assignee_from_all_tasks(project_id, user_id)
+        logger.info('Successfully removed member %s from project %s', user_id, project_id)
         return ProjectResponse.model_validate(updated_project)
 
     def leave_project(self, project_id: int, current_user_id: int) -> ProjectResponse:
