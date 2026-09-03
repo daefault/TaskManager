@@ -8,9 +8,15 @@
 
 Технологии:
 Backend - Python 3.11 + FastAPI 
+
 БД - PostgreSQL + SQLAlchemy + Alembic
+
 Аутентификация - JWT токены (python-jose)
+
 Фоновые задачи для уведомлений - Celery + Redis
+
 Мониторинг уведомлений - flower
+
 Тестирование - pytest + pytest-cov
+
 Контейнеризация - Docker + Docker Compose
